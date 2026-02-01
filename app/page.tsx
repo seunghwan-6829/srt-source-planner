@@ -48,10 +48,11 @@ export default function Home() {
         prev.map((s) => {
           const u = suggestions.find((x: { index: number }) => x.index === s.index)
           if (!u) return s
+          const st = u.sourceType as SourceType
           return {
             ...s,
-            sourceType: u.sourceType,
-            mood: moodByType[u.sourceType] || s.mood,
+            sourceType: st,
+            mood: moodByType[st] || s.mood,
             suggestedReason: u.reason || '',
           }
         })
