@@ -9,19 +9,57 @@ import {
   ILLUSTRATION_MOODS,
   PHOTO_MOODS,
 } from '@/lib/types'
-import { Upload, Download, FileText, Image, Link2, Sparkles } from 'lucide-react'
+import { Upload, Download, FileText, Image, Link2, Sparkles, Wand2 } from 'lucide-react'
 import JSZip from 'jszip'
 
-const UNDERLINE_CLASS: Record<SourceType, string> = {
-  illustration: 'segment-underline-illustration',
-  photo: 'segment-underline-photo',
-  real: 'segment-underline-real',
+const HIGHLIGHT_CLASS: Record<SourceType, string> = {
+  illustration: 'highlight-illustration',
+  photo: 'highlight-photo',
+  real: 'highlight-real',
 }
 
 export default function Home() {
   const [segments, setSegments] = useState<SrtSegment[]>([])
   const [fileName, setFileName] = useState<string>('')
   const [defaultType, setDefaultType] = useState<SourceType>('illustration')
+
+  const [classifying, setClassifying] = useState(false)
+
+  const runSuggestSourceTypes = useCallback(async () => {
+    if (segments.length === 0) return
+    setClassifying(true)
+    try {
+      const res = await fetch('/api/suggest-source-types', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          segments: segments.map((s) => ({ index: s.index, text: s.text })),
+        }),
+      })
+      if (!res.ok) return
+      const { suggestions } = await res.json()
+      if (!Array.isArray(suggestions)) return
+      const moodByType: Record<SourceType, string> = {
+        illustration: '플랫 일러스트',
+        photo: '다큐멘터리',
+        real: '',
+      }
+      setSegments((prev) =>
+        prev.map((s) => {
+          const u = suggestions.find((x: { index: number }) => x.index === s.index)
+          if (!u) return s
+          return {
+            ...s,
+            sourceType: u.sourceType,
+            mood: moodByType[u.sourceType] || s.mood,
+            suggestedReason: u.reason || '',
+          }
+        })
+      )
+    } finally {
+      setClassifying(false)
+    }
+  }, [segments])
 
   const handleFile = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,6 +71,7 @@ export default function Home() {
         const raw = String(reader.result)
         const parsed = parseSrt(raw, defaultType)
         setSegments(parsed)
+        // 1차 자동 분류는 로드 후 버튼으로 실행 (사용자가 "1차 자동 분류" 클릭)
       }
       reader.readAsText(file, 'utf-8')
     },
@@ -82,6 +121,7 @@ export default function Home() {
         endTimecode: seg.endTimecode,
         sourceType: seg.sourceType,
         mood: seg.mood,
+        suggestedReason: seg.suggestedReason,
         realRefUrls: seg.realRefUrls,
       }, null, 2))
 
@@ -159,26 +199,36 @@ export default function Home() {
       {/* 구간 목록 + 색상 밑줄 + 편집 */}
       {segments.length > 0 && (
         <>
-          <section className="mb-6 flex items-center justify-between">
+          <section className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold text-neutral-700">
-              구간별 소스 지정 (색상 밑줄로 타입 표시)
+              구간별 소스 지정 (형광펜 색으로 타입 표시)
             </h2>
-            <button
-              type="button"
-              onClick={exportZip}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium"
-            >
-              <Download className="w-4 h-4" />
-              ZIP으로 내보내기
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={runSuggestSourceTypes}
+                disabled={classifying}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 text-sm font-medium"
+              >
+                <Wand2 className="w-4 h-4" />
+                {classifying ? '분류 중…' : '1차 자동 분류'}
+              </button>
+              <button
+                type="button"
+                onClick={exportZip}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium"
+              >
+                <Download className="w-4 h-4" />
+                ZIP으로 내보내기
+              </button>
+            </div>
           </section>
 
           <ul className="space-y-4">
             {segments.map((seg) => (
               <li
                 key={seg.index}
-                className={`p-4 rounded-xl border-l-4 bg-white border border-neutral-200 shadow-sm ${UNDERLINE_CLASS[seg.sourceType]}`}
-                style={{ borderLeftColor: SOURCE_TYPE_COLORS[seg.sourceType] }}
+                className="p-4 rounded-xl bg-white border border-neutral-200 shadow-sm"
               >
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="text-xs font-mono text-neutral-400">
@@ -195,13 +245,20 @@ export default function Home() {
                   </span>
                 </div>
 
-                <textarea
-                  value={seg.text}
-                  onChange={(e) => updateSegment(seg.index, { text: e.target.value })}
-                  rows={2}
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm resize-y mb-3"
-                  placeholder="나레이션 텍스트"
-                />
+                <div className={`rounded-lg border border-neutral-300 overflow-hidden ${HIGHLIGHT_CLASS[seg.sourceType]}`}>
+                  <textarea
+                    value={seg.text}
+                    onChange={(e) => updateSegment(seg.index, { text: e.target.value })}
+                    rows={2}
+                    className="w-full px-3 py-2 text-sm resize-y bg-transparent border-0 focus:ring-0 focus:outline-none"
+                    placeholder="나레이션 텍스트"
+                  />
+                </div>
+                {seg.suggestedReason && (
+                  <p className="mt-1.5 mb-2 text-xs text-neutral-500 italic">
+                    추천 이유: {seg.suggestedReason}
+                  </p>
+                )}
 
                 <div className="flex flex-wrap gap-3 items-center">
                   <div className="flex items-center gap-2">

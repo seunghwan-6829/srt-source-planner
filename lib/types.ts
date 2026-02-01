@@ -12,6 +12,8 @@ export interface SrtSegment {
   sourceType: SourceType
   mood: string
   realRefUrls: { url: string; title?: string }[]
+  /** 1차 자동 분류 시 AI가 넣어준 1줄 이유 */
+  suggestedReason?: string
 }
 
 /** SRT 파싱 결과 */
