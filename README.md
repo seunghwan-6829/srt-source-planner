@@ -35,15 +35,9 @@ OPENAI_API_KEY=sk-...
 
 ## GitHub → Vercel 배포
 
-1. 이 프로젝트를 GitHub 저장소로 푸시합니다.
-
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial: SRT 소스 플래너"
-   git remote add origin https://github.com/YOUR_USERNAME/srt-source-planner.git
-   git push -u origin main
-   ```
+1. **GitHub 연결**: 로컬에서 이미 `git init` 및 첫 커밋까지 완료되어 있습니다.  
+   → 자세한 단계는 **[GITHUB_SETUP.md](./GITHUB_SETUP.md)** 를 보세요.  
+   (GitHub에서 새 저장소 만든 뒤 `git remote set-url` + `git push -u origin main` 하면 됩니다.)
 
 2. [Vercel](https://vercel.com) 로그인 후 **Import Project**에서 해당 GitHub 저장소 선택.
 3. Framework Preset: **Next.js** 그대로 두고 Deploy.
