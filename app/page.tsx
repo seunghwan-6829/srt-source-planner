@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react'
 import { parseSrt, timecodeToNumbering } from '@/lib/srt'
 import type { SrtSegment, SourceType } from '@/lib/types'
+import Image from 'next/image'
 import { SOURCE_TYPE_LABELS, SOURCE_TYPE_COLORS } from '@/lib/types'
 import { Upload, Download, Link2, Sparkles, Wand2, ImagePlus } from 'lucide-react'
 import JSZip from 'jszip'
@@ -315,10 +316,13 @@ export default function Home() {
 
                 {seg.sourceType === 'illustration' && seg.generatedImageUrl && (
                   <div className="mt-3 flex items-center gap-3">
-                    <img
+                    <Image
                       src={seg.generatedImageUrl}
                       alt="생성된 이미지"
+                      width={160}
+                      height={80}
                       className="h-20 w-auto rounded border border-neutral-200 object-cover"
+                      unoptimized
                     />
                     <a
                       href={seg.generatedImageUrl}

@@ -15,8 +15,12 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) {
-      const types: SourceType[] = ['illustration', 'photo', 'real']
-      const labels = { illustration: '일러스트', photo: '사진', real: '실제 자료' }
+      const types = ['illustration', 'photo', 'real'] as const
+      const labels: Record<(typeof types)[number], string> = {
+        illustration: '일러스트',
+        photo: '사진',
+        real: '실제 자료',
+      }
       return NextResponse.json({
         suggestions: segments.map((s, i) => {
           const t = types[i % 3]
