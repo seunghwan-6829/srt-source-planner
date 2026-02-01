@@ -36,6 +36,7 @@ export default function Home() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             prompt: seg.text.slice(0, 1000),
+            sourceType: seg.sourceType === 'photo' ? 'photo' : 'illustration',
             aspect_ratio: '16:9',
             resolution: '1K',
           }),
@@ -285,16 +286,24 @@ export default function Home() {
                     </select>
                   </div>
 
-                  {seg.sourceType === 'illustration' && (
+                  {(seg.sourceType === 'illustration' || seg.sourceType === 'photo') && (
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => generateImage(seg)}
                         disabled={generatingImageIndex === seg.index}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-100 text-blue-800 text-sm hover:bg-blue-200 disabled:opacity-50"
+                        className={
+                          seg.sourceType === 'illustration'
+                            ? 'inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-100 text-blue-800 text-sm hover:bg-blue-200 disabled:opacity-50'
+                            : 'inline-flex items-center gap-1 px-2 py-1 rounded bg-green-100 text-green-800 text-sm hover:bg-green-200 disabled:opacity-50'
+                        }
                       >
                         <ImagePlus className="w-3.5 h-3.5" />
-                        {generatingImageIndex === seg.index ? '생성 중…' : '이미지 생성 (Nano Banana Pro)'}
+                        {generatingImageIndex === seg.index
+                          ? '생성 중…'
+                          : seg.sourceType === 'illustration'
+                            ? '이미지 생성 (일러스트 스타일)'
+                            : '이미지 생성 (사진 스타일)'}
                       </button>
                     </div>
                   )}
@@ -314,7 +323,7 @@ export default function Home() {
                   )}
                 </div>
 
-                {seg.sourceType === 'illustration' && seg.generatedImageUrl && (
+                {(seg.sourceType === 'illustration' || seg.sourceType === 'photo') && seg.generatedImageUrl && (
                   <div className="mt-3 flex items-center gap-3">
                     <Image
                       src={seg.generatedImageUrl}

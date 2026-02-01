@@ -19,13 +19,21 @@ export async function POST(req: NextRequest) {
 
     const body = (await req.json()) as {
       prompt?: string
+      sourceType?: 'illustration' | 'photo'
       aspect_ratio?: string
       resolution?: string
     }
-    const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : ''
-    if (!prompt) {
+    const rawPrompt = typeof body.prompt === 'string' ? body.prompt.trim() : ''
+    if (!rawPrompt) {
       return NextResponse.json({ error: 'prompt required' }, { status: 400 })
     }
+
+    const sourceType = body.sourceType || 'illustration'
+    const stylePrefix =
+      sourceType === 'illustration'
+        ? 'Professional illustration style, digital art, clean artistic drawing, not a photo. Scene: '
+        : 'Photorealistic, real photograph, high quality realistic photo, lifelike, not illustration. Scene: '
+    const prompt = stylePrefix + rawPrompt.slice(0, 900)
 
     const aspectRatio = body.aspect_ratio || '16:9'
     const resolution = body.resolution || '1K'
