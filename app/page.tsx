@@ -21,8 +21,6 @@ const HIGHLIGHT_CLASS: Record<SourceType, string> = {
 export default function Home() {
   const [segments, setSegments] = useState<SrtSegment[]>([])
   const [fileName, setFileName] = useState<string>('')
-  const [defaultType, setDefaultType] = useState<SourceType>('illustration')
-
   const [classifying, setClassifying] = useState(false)
 
   const runSuggestSourceTypes = useCallback(async () => {
@@ -70,13 +68,12 @@ export default function Home() {
       const reader = new FileReader()
       reader.onload = () => {
         const raw = String(reader.result)
-        const parsed = parseSrt(raw, defaultType)
+        const parsed = parseSrt(raw, 'illustration')
         setSegments(parsed)
-        // 1차 자동 분류는 로드 후 버튼으로 실행 (사용자가 "1차 자동 분류" 클릭)
       }
       reader.readAsText(file, 'utf-8')
     },
-    [defaultType]
+    []
   )
 
   const updateSegment = useCallback((index: number, patch: Partial<SrtSegment>) => {
@@ -168,19 +165,7 @@ export default function Home() {
 
       {/* 업로드 */}
       <section className="mb-8 p-4 bg-white rounded-xl border border-neutral-200 shadow-sm">
-        <label className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          <span className="text-sm font-medium text-neutral-600">기본 소스 타입 (새 SRT 적용 시)</span>
-          <select
-            value={defaultType}
-            onChange={(e) => setDefaultType(e.target.value as SourceType)}
-            className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
-          >
-            {(['illustration', 'photo', 'real'] as const).map((t) => (
-              <option key={t} value={t}>{SOURCE_TYPE_LABELS[t]}</option>
-            ))}
-          </select>
-        </label>
-        <div className="mt-4 flex items-center gap-4">
+        <div className="flex items-center gap-4">
           <label className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-800 text-white rounded-lg cursor-pointer hover:bg-neutral-700 text-sm font-medium">
             <Upload className="w-4 h-4" />
             SRT 파일 선택
@@ -229,7 +214,7 @@ export default function Home() {
             {segments.map((seg) => (
               <li
                 key={seg.index}
-                className="p-4 rounded-xl bg-white border border-neutral-200 shadow-sm"
+                className="p-4 rounded-xl bg-white border border-neutral-200 border-[1px] shadow-sm"
               >
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="text-xs font-mono text-neutral-400">
@@ -246,7 +231,7 @@ export default function Home() {
                   </span>
                 </div>
 
-                <div className={`rounded-lg border border-neutral-300 overflow-hidden ${HIGHLIGHT_CLASS[seg.sourceType]}`}>
+                <div className={`rounded-lg border border-neutral-200 overflow-hidden border-[1px] ${HIGHLIGHT_CLASS[seg.sourceType]}`}>
                   <textarea
                     value={seg.text}
                     onChange={(e) => updateSegment(seg.index, { text: e.target.value })}
@@ -255,11 +240,9 @@ export default function Home() {
                     placeholder="나레이션 텍스트"
                   />
                 </div>
-                {seg.suggestedReason && (
-                  <p className="mt-1.5 mb-2 text-xs text-neutral-500 italic">
-                    추천 이유: {seg.suggestedReason}
-                  </p>
-                )}
+                <p className="mt-1.5 mb-2 text-xs text-neutral-500 italic">
+                  추천 이유: {seg.suggestedReason || '(1차 자동 분류를 실행하면, 이 구간을 일러스트/사진/실제자료 중 어떤 것으로 골랐는지와 이유가 표시됩니다.)'}
+                </p>
 
                 <div className="flex flex-wrap gap-3 items-center">
                   <div className="flex items-center gap-2">
@@ -277,7 +260,7 @@ export default function Home() {
                                 : '',
                         })
                       }
-                      className="rounded border border-neutral-300 px-2 py-1 text-sm"
+                      className="rounded border border-neutral-200 border-[1px] px-2 py-1 text-sm outline-none focus:ring-0"
                     >
                       <option value="illustration">{SOURCE_TYPE_LABELS.illustration}</option>
                       <option value="photo">{SOURCE_TYPE_LABELS.photo}</option>
@@ -291,7 +274,7 @@ export default function Home() {
                       <select
                         value={seg.mood}
                         onChange={(e) => updateSegment(seg.index, { mood: e.target.value })}
-                        className="rounded border border-neutral-300 px-2 py-1 text-sm"
+                        className="rounded border border-neutral-200 border-[1px] px-2 py-1 text-sm outline-none focus:ring-0"
                       >
                         {ILLUSTRATION_MOODS.map((m) => (
                           <option key={m} value={m}>{m}</option>
@@ -306,7 +289,7 @@ export default function Home() {
                       <select
                         value={seg.mood}
                         onChange={(e) => updateSegment(seg.index, { mood: e.target.value })}
-                        className="rounded border border-neutral-300 px-2 py-1 text-sm"
+                        className="rounded border border-neutral-200 border-[1px] px-2 py-1 text-sm outline-none focus:ring-0"
                       >
                         {PHOTO_MOODS.map((m) => (
                           <option key={m} value={m}>{m}</option>

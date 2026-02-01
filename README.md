@@ -45,6 +45,19 @@ OPENAI_API_KEY=sk-...
 
 배포 후 제공되는 URL에서 바로 사용할 수 있습니다.
 
+### 한 번에 배포하기
+
+변경사항을 커밋하고 GitHub에 푸시해 Vercel이 자동 배포하도록 하려면, 프로젝트 폴더에서 아래만 실행하면 됩니다.
+
+```powershell
+cd C:\Users\user\srt-source-planner
+.\deploy.ps1
+```
+
+- 변경된 파일이 있으면 자동으로 `git add` → `git commit` → `git push origin main` 실행
+- 변경 없으면 푸시만 시도
+- 푸시 성공 시 Vercel에서 자동 배포
+
 ## ZIP 출력 구조 예시
 
 ```
