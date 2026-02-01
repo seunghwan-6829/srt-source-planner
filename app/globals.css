@@ -29,3 +29,8 @@
   padding: 4px 6px;
   border-radius: 4px;
 }
+.highlight-none {
+  background-color: rgba(115, 115, 115, 0.12);
+  padding: 4px 6px;
+  border-radius: 4px;
+}

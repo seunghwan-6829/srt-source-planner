@@ -25,12 +25,14 @@ npm run dev
 
 ## 환경 변수 (선택)
 
-- `OPENAI_API_KEY`: 실제 자료 URL 추천 시 GPT 사용. 없으면 목업 URL 반환.
+- `OPENAI_API_KEY`: 실제 자료 URL 추천 시 GPT 사용. 없으면 기본 분배만 적용.
+- `FAL_KEY`: [FAL.AI](https://fal.ai) API 키. **일러스트** 구간에서 **이미지 생성 (Nano Banana Pro)** 사용 시 필요.
 
 `.env.local` 예시:
 
 ```
 OPENAI_API_KEY=sk-...
+FAL_KEY=your-fal-api-key
 ```
 
 ## GitHub → Vercel 배포

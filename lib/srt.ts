@@ -27,7 +27,7 @@ const SRT_BLOCK = /(\d+)\s*\n(\d{2}:\d{2}:\d{2}[,.]\d{3})\s*-->\s*(\d{2}:\d{2}:\
  * SRT 문자열을 파싱해 구간 배열로 반환.
  * 각 구간에 기본 sourceType·mood를 넣어서 편집 가능하게 함.
  */
-export function parseSrt(raw: string, defaultType: SourceType = 'illustration'): SrtSegment[] {
+export function parseSrt(raw: string, defaultType: SourceType = 'none'): SrtSegment[] {
   const segments: SrtSegment[] = []
   let m: RegExpExecArray | null
   SRT_BLOCK.lastIndex = 0
@@ -49,7 +49,7 @@ export function parseSrt(raw: string, defaultType: SourceType = 'illustration'):
       endTimecode: endTc,
       text,
       sourceType: defaultType,
-      mood: defaultType === 'illustration' ? '플랫 일러스트' : defaultType === 'photo' ? '다큐멘터리' : '',
+      mood: '',
       realRefUrls: [],
     })
   }

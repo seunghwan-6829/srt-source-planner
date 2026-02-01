@@ -3,16 +3,12 @@
 import { useCallback, useState } from 'react'
 import { parseSrt, timecodeToNumbering } from '@/lib/srt'
 import type { SrtSegment, SourceType } from '@/lib/types'
-import {
-  SOURCE_TYPE_LABELS,
-  SOURCE_TYPE_COLORS,
-  ILLUSTRATION_MOODS,
-  PHOTO_MOODS,
-} from '@/lib/types'
-import { Upload, Download, FileText, Image, Link2, Sparkles, Wand2 } from 'lucide-react'
+import { SOURCE_TYPE_LABELS, SOURCE_TYPE_COLORS } from '@/lib/types'
+import { Upload, Download, Link2, Sparkles, Wand2, ImagePlus } from 'lucide-react'
 import JSZip from 'jszip'
 
 const HIGHLIGHT_CLASS: Record<SourceType, string> = {
+  none: 'highlight-none',
   illustration: 'highlight-illustration',
   photo: 'highlight-photo',
   real: 'highlight-real',
@@ -22,6 +18,34 @@ export default function Home() {
   const [segments, setSegments] = useState<SrtSegment[]>([])
   const [fileName, setFileName] = useState<string>('')
   const [classifying, setClassifying] = useState(false)
+  const [generatingImageIndex, setGeneratingImageIndex] = useState<number | null>(null)
+
+  const generateImage = useCallback(
+    async (seg: SrtSegment) => {
+      setGeneratingImageIndex(seg.index)
+      try {
+        const res = await fetch('/api/generate-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: seg.text.slice(0, 1000),
+            aspect_ratio: '16:9',
+            resolution: '1K',
+          }),
+        })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          alert(err?.error || '이미지 생성 실패')
+          return
+        }
+        const { url } = await res.json()
+        if (url) updateSegment(seg.index, { generatedImageUrl: url })
+      } finally {
+        setGeneratingImageIndex(null)
+      }
+    },
+    [updateSegment]
+  )
 
   const runSuggestSourceTypes = useCallback(async () => {
     if (segments.length === 0) return
@@ -37,11 +61,6 @@ export default function Home() {
       if (!res.ok) return
       const { suggestions } = await res.json()
       if (!Array.isArray(suggestions)) return
-      const moodByType: Record<SourceType, string> = {
-        illustration: '플랫 일러스트',
-        photo: '다큐멘터리',
-        real: '',
-      }
       setSegments((prev) =>
         prev.map((s) => {
           const u = suggestions.find((x: { index: number }) => x.index === s.index)
@@ -50,7 +69,7 @@ export default function Home() {
           return {
             ...s,
             sourceType: st,
-            mood: moodByType[st] || s.mood,
+            mood: '',
             suggestedReason: u.reason || '',
           }
         })
@@ -68,7 +87,7 @@ export default function Home() {
       const reader = new FileReader()
       reader.onload = () => {
         const raw = String(reader.result)
-        const parsed = parseSrt(raw, 'illustration')
+        const parsed = parseSrt(raw, 'none')
         setSegments(parsed)
       }
       reader.readAsText(file, 'utf-8')
@@ -120,6 +139,7 @@ export default function Home() {
         sourceType: seg.sourceType,
         mood: seg.mood,
         suggestedReason: seg.suggestedReason,
+        generatedImageUrl: seg.generatedImageUrl,
         realRefUrls: seg.realRefUrls,
       }, null, 2))
 
@@ -252,16 +272,12 @@ export default function Home() {
                       onChange={(e) =>
                         updateSegment(seg.index, {
                           sourceType: e.target.value as SourceType,
-                          mood:
-                            e.target.value === 'illustration'
-                              ? '플랫 일러스트'
-                              : e.target.value === 'photo'
-                                ? '다큐멘터리'
-                                : '',
+                          mood: '',
                         })
                       }
                       className="rounded border border-neutral-200 border-[1px] px-2 py-1 text-sm outline-none focus:ring-0"
                     >
+                      <option value="none">{SOURCE_TYPE_LABELS.none}</option>
                       <option value="illustration">{SOURCE_TYPE_LABELS.illustration}</option>
                       <option value="photo">{SOURCE_TYPE_LABELS.photo}</option>
                       <option value="real">{SOURCE_TYPE_LABELS.real}</option>
@@ -270,31 +286,15 @@ export default function Home() {
 
                   {seg.sourceType === 'illustration' && (
                     <div className="flex items-center gap-2">
-                      <Image className="w-4 h-4 text-neutral-400" />
-                      <select
-                        value={seg.mood}
-                        onChange={(e) => updateSegment(seg.index, { mood: e.target.value })}
-                        className="rounded border border-neutral-200 border-[1px] px-2 py-1 text-sm outline-none focus:ring-0"
+                      <button
+                        type="button"
+                        onClick={() => generateImage(seg)}
+                        disabled={generatingImageIndex === seg.index}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-100 text-blue-800 text-sm hover:bg-blue-200 disabled:opacity-50"
                       >
-                        {ILLUSTRATION_MOODS.map((m) => (
-                          <option key={m} value={m}>{m}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {seg.sourceType === 'photo' && (
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-neutral-400" />
-                      <select
-                        value={seg.mood}
-                        onChange={(e) => updateSegment(seg.index, { mood: e.target.value })}
-                        className="rounded border border-neutral-200 border-[1px] px-2 py-1 text-sm outline-none focus:ring-0"
-                      >
-                        {PHOTO_MOODS.map((m) => (
-                          <option key={m} value={m}>{m}</option>
-                        ))}
-                      </select>
+                        <ImagePlus className="w-3.5 h-3.5" />
+                        {generatingImageIndex === seg.index ? '생성 중…' : '이미지 생성 (Nano Banana Pro)'}
+                      </button>
                     </div>
                   )}
 
@@ -312,6 +312,31 @@ export default function Home() {
                     </div>
                   )}
                 </div>
+
+                {seg.sourceType === 'illustration' && seg.generatedImageUrl && (
+                  <div className="mt-3 flex items-center gap-3">
+                    <img
+                      src={seg.generatedImageUrl}
+                      alt="생성된 이미지"
+                      className="h-20 w-auto rounded border border-neutral-200 object-cover"
+                    />
+                    <a
+                      href={seg.generatedImageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline text-sm"
+                    >
+                      새 탭에서 보기
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => updateSegment(seg.index, { generatedImageUrl: undefined })}
+                      className="text-neutral-400 hover:text-red-500 text-xs"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                )}
 
                 {seg.sourceType === 'real' && seg.realRefUrls.length > 0 && (
                   <ul className="mt-3 space-y-1 text-sm">
