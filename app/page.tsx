@@ -21,6 +21,12 @@ export default function Home() {
   const [classifying, setClassifying] = useState(false)
   const [generatingImageIndex, setGeneratingImageIndex] = useState<number | null>(null)
 
+  const updateSegment = useCallback((index: number, patch: Partial<SrtSegment>) => {
+    setSegments((prev) =>
+      prev.map((s) => (s.index === index ? { ...s, ...patch } : s))
+    )
+  }, [])
+
   const generateImage = useCallback(
     async (seg: SrtSegment) => {
       setGeneratingImageIndex(seg.index)
@@ -95,12 +101,6 @@ export default function Home() {
     },
     []
   )
-
-  const updateSegment = useCallback((index: number, patch: Partial<SrtSegment>) => {
-    setSegments((prev) =>
-      prev.map((s) => (s.index === index ? { ...s, ...patch } : s))
-    )
-  }, [])
 
   const suggestRealRef = useCallback(async (seg: SrtSegment) => {
     try {
