@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --type-illustration: #2563eb;
+    --type-photo: #16a34a;
+    --type-real: #ea580c;
+  }
+  body {
+    @apply bg-neutral-50 text-neutral-900 antialiased;
+  }
+}
+
+.segment-underline-illustration {
+  border-bottom: 3px solid var(--type-illustration);
+}
+.segment-underline-photo {
+  border-bottom: 3px solid var(--type-photo);
+}
+.segment-underline-real {
+  border-bottom: 3px solid var(--type-real);
+}
