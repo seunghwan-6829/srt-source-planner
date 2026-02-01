@@ -15,12 +15,17 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) {
+      const types: SourceType[] = ['illustration', 'photo', 'real']
+      const labels = { illustration: '일러스트', photo: '사진', real: '실제 자료' }
       return NextResponse.json({
-        suggestions: segments.map((s) => ({
-          index: s.index,
-          sourceType: 'illustration' as SourceType,
-          reason: 'API 키 없음: 기본값 일러스트 (OPENAI_API_KEY 설정 시 자동 분류 가능)',
-        })),
+        suggestions: segments.map((s, i) => {
+          const t = types[i % 3]
+          return {
+            index: s.index,
+            sourceType: t,
+            reason: `기본 분배: ${labels[t]} (OPENAI_API_KEY 설정 시 AI가 내용 기준으로 분류)`,
+          }
+        }),
       })
     }
 
@@ -44,6 +49,7 @@ export async function POST(req: NextRequest) {
 - illustration: 개념 설명, 비유, 감정/분위기, 캐릭터, 그래픽으로 보여주기 좋은 내용
 - photo: 실제 장면, 인물, 제품, 현장, 다큐멘터리 느낌
 - real: 뉴스/통계/기사 인용, 출처가 필요한 사실, 검증 가능한 자료
+중요: 전부 일러스트로 두지 말고, 내용에 맞게 일러스트/사진/실제자료를 골고루 분배해주세요.
 답변은 반드시 JSON 배열만 출력하세요. 다른 말 없이 배열만.
 형식: [{"index": 1, "sourceType": "illustration" 또는 "photo" 또는 "real", "reason": "1줄 이유 (한국어, 짧게)"}, ...]
 index는 입력에 나온 번호와 동일하게 넣으세요. reason은 20자 내외로 짧게.`,
